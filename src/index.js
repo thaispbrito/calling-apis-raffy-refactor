@@ -60,8 +60,7 @@ const getLocationFromQuery = query => {
     });
 };
 
-// getLocationFromQuery('Seattle, Washington, USA')
-getLocationFromQuery('Christ the Redeemer')
+getLocationFromQuery('Seattle, Washington, USA')
   .then(location => {
     console.log(location);
   })
