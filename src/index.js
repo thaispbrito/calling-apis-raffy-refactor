@@ -5,13 +5,10 @@ dotEnv.config(); // Load variables from .env
 const LOCATIONIQ_KEY = process.env.API_KEY; // Access the API_KEY from .env file
 
 
-/////////////////////////////////
-//    Initial Implementation   //
-/////////////////////////////////
-
-const findLatitudeAndLongitude = (query) => {
-  let latitude, longitude;
-  axios.get('https://us1.locationiq.com/v1/search.php',
+// input: query: string
+// returns: Promise<{ latitude: string, longitude: string}>
+const findLatitudeAndLongitude = query => {
+  return axios.get('https://us1.locationiq.com/v1/search.php',
     {
       params: {
         key: LOCATIONIQ_KEY,
@@ -19,24 +16,20 @@ const findLatitudeAndLongitude = (query) => {
         format: 'json'
       }
     })
-    .then( (response) => {
-      latitude = response.data[0].lat;
-      longitude = response.data[0].lon;
-      console.log('success in findLatitudeAndLongitude!', latitude, longitude);
+    .then(response => {
+      const { lat: latitude, lon: longitude } = response.data[0];
+      return { latitude, longitude };
     })
-    .catch( (/*error*/) => {
-      console.log('error in findLatitudeAndLongitude!');
-      // console.log(error); // If we want to see more info about the issue
+    .catch(error => {
+      console.log(`findLatitudeAndLongitude: ${error}`);
+      throw error;
     });
-
-  return {
-    seattleLat: latitude,
-    seattleLon: longitude
-  };
 };
 
+// input: latitude: string, longitude: string
+// returns: Promise<Location{}>
 const findLocation = (latitude, longitude) => {
-  axios.get('https://us1.locationiq.com/v1/reverse.php',
+  return axios.get('https://us1.locationiq.com/v1/reverse.php',
     {
       params: {
         key: LOCATIONIQ_KEY,
@@ -45,82 +38,33 @@ const findLocation = (latitude, longitude) => {
         lon: longitude
       }
     })
-    .then( (response) => {
-      console.log('success in findLocation!', response.data);
+    .then(response => {
       return response.data;
     })
-    .catch( (/*error*/) => {
-      console.log('error in findLocation!');
-      // console.log(error); // If we want to see more info about the issue
+    .catch(error => {
+      console.log(`findLocation: ${error}`);
+      throw error;
     });
 };
 
-const seattleCoordinates = findLatitudeAndLongitude('Seattle, Washington, USA');
-const locations = findLocation(seattleCoordinates.seattleLat, seattleCoordinates.seattleLon);
-console.log(locations);
+// input: query: string
+// returns: Promise<Location{}>
+const getLocationFromQuery = query => {
+  return findLatitudeAndLongitude(query)
+    .then(({ latitude, longitude }) => {
+      return findLocation(latitude, longitude);
+    })
+    .catch(error => {
+      console.log(`getLocationFromQuery: ${error}`);
+      throw error;
+    });
+};
 
-
-/////////////////////////////////
-// Refactoring: Utilize `then` //
-/////////////////////////////////
-
-// const getLocationFromQuery = (query) => {
-//   // Make the first API call to get latitude and longitude
-//   findLatitudeAndLongitude(query)
-//     .then((response) => {
-//       // `response` is the data returned from the findLatitudeAndLongitude promise
-//
-//       // Make the next API call here, where we can use the `response` data from the previous call
-//       findLocation(response.latitude, response.longitude);
-//     })
-//     .catch((error) => {
-//       console.log('getLocationFromQuery: error fetching location from query!');
-//       // console.log(error); // If we want to see more info about the issue
-//     });
-// };
-
-// const findLatitudeAndLongitude = (query) => {
-//   let latitude, longitude;
-
-//   // Return the promise chain created by the axios call
-//   return axios.get('https://us1.locationiq.com/v1/search.php',
-//     {
-//       params: {
-//         key: LOCATIONIQ_KEY,
-//         q: query,
-//         format: 'json'
-//       }
-//     })
-//     .then((response) => {
-//       latitude = response.data[0].lat;
-//       longitude = response.data[0].lon;
-//       console.log('success in findLatitudeAndLongitude!', latitude, longitude);
-
-//       return {latitude, longitude}; // Return the data we want to pass on
-//     })
-//     .catch((error) => {
-//       console.log('error in findLatitudeAndLongitude!');
-//       // console.log(error); // If we want to see more info about the issue
-//     });
-// };
-
-// const findLocation = (latitude, longitude) => {
-//   axios.get('https://us1.locationiq.com/v1/reverse.php',
-//     {
-//       params: {
-//         key: LOCATIONIQ_KEY,
-//         format: 'json',
-//         lat: latitude,
-//         lon: longitude
-//       }
-//     })
-//     .then((response) => {
-//       console.log('success in findLocation!', response.data);
-//     })
-//     .catch((error) => {
-//       console.log('error in findLocation!', error);
-//       // console.log(error); // If we want to see more info about the issue
-//     });
-// };
-
-// getLocationFromQuery('Seattle, Washington, USA');
+// getLocationFromQuery('Seattle, Washington, USA')
+getLocationFromQuery('Christ the Redeemer')
+  .then(location => {
+    console.log(location);
+  })
+  .catch(error => {
+    console.log(`main: ${error}`);
+  });
